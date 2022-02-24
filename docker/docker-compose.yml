@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+
+  #Front-end
+  web:
+    build: ./web
+    volumes:
+      - ./web/src:/usr/local/web
+    environment:
+      TZ: Asia/Tokyo
+      HTTP_PORT: 3000
+      PRODUCTION: 0
+    ports:
+      - 8080:3000
+      - 8083:3003
+      - 9229:9229
+    tty: true
+
+  #Back-end
+  app:
+    build: ./app
+    volumes:
+      - ./app/src:/var/www/html
+      - ./app/apache/conf:/etc/apache2/sites-enabled
+      - ./app/supervisor/logs:/var/log/supervisor
+      - ./app/php/php.ini:/usr/local/etc/php/php.ini
+      - ./app/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+    environment:
+      TZ: Asia/Tokyo
+    links:
+      - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    privileged: true
+    ports:
+      - 8888:80
+
+  #database
+  db:
+    image: mariadb:10.5
+    env_file:
+      - ./db/.env
+    volumes:
+      - ./db/data:/var/lib/mysql
+    ports:
+      - 3306:3306
